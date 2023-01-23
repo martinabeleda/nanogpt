@@ -1,15 +1,15 @@
-from dataclasses import dataclass
-
+from dataclasses import dataclass, asdict
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
 from loguru import logger
 
 from nanogpt.model.bigram import BigramLanguageModel
+from nanogpt.model.gpt import GPT
 
 
 @dataclass
-class Hyperparameters:
+class BaseConfig:
     batch_size = 32
     block_size = 8
     max_iters = 3000
@@ -26,6 +26,34 @@ class Hyperparameters:
             return "mps"
         else:
             return "cpu"
+
+
+@dataclass
+class BigramConfig(BaseConfig):
+    def model(self, vocabulary_size: int) -> BigramLanguageModel:
+        model = BigramLanguageModel(vocabulary_size)
+        return model
+
+
+@dataclass
+class GPTConfig(BaseConfig):
+    n_embd = 32
+    n_head = 6
+    n_layer = 6
+    dropout = 0.2
+    max_iters = 5000
+    eval_interval = 500
+    learning_rate = 1e-3
+
+    def model(self, vocabulary_size: int) -> GPT:
+        model = GPT(
+            vocabulary_size,
+            self.n_embd,
+            self.block_size,
+            self.n_head,
+            self.device,
+        )
+        return model
 
 
 def load_dataset() -> str:
@@ -63,7 +91,7 @@ def get_batch(
 def estimate_loss(
     train_data: torch.Tensor,
     val_data: torch.Tensor,
-    config: Hyperparameters,
+    config: BaseConfig,
     model: nn.Module,
 ) -> dict[str, float]:
     out = {}
@@ -81,7 +109,9 @@ def estimate_loss(
 
 
 def train():
-    config = Hyperparameters()
+    config = GPTConfig()
+    logger.info(f"Running config: {config.__class__.__name__}")
+    logger.info(f"Resolved config: {asdict(config)}")
 
     text = load_dataset()
     characters = sorted(list(set(text)))
@@ -101,7 +131,7 @@ def train():
 
     train_data, val_data = train_test_split(data, config.train_split)
 
-    model = BigramLanguageModel(vocabulary_size)
+    model = config.model(vocabulary_size)
     m = model.to(config.device)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
