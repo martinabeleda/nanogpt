@@ -11,5 +11,10 @@
       "ghcr.io/devcontainers/features/nvidia-cuda:1": {
         "installCudnn": true
       }
+    },
+    "hostRequirements": {
+      "cpus": 8,
+      "memory": "8gb",
+      "storage": "32gb"
     }
   }
