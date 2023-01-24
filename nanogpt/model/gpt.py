@@ -1,7 +1,25 @@
+from dataclasses import dataclass
 from typing import Optional
+
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+
+
+@dataclass
+class GPTConfig:
+    max_iters: int = 5000
+    eval_interval: int = 500
+    learning_rate: float = 3e-4
+    eval_iters: int = 200
+    train_split: float = 0.9
+
+    batch_size: int = 64
+    block_size: int = 256
+    n_embd: int = 384
+    n_head: int = 6
+    n_layer: int = 6
+    dropout: float = 0.2
 
 
 class GPT(nn.Module):
@@ -14,34 +32,31 @@ class GPT(nn.Module):
 
     def __init__(
         self,
+        config: GPTConfig,
         vocab_size: int,
-        block_size: int = 8,
-        n_embd: int = 32,
-        n_head: int = 4,
-        n_layer: int = 4,
-        dropout: float = 0.2,
         device: str = "cpu",
     ):
         super().__init__()
-        self.block_size = block_size
+        self.config = config
+        self.block_size = config.block_size
         self.device = device
 
-        self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
-        self.position_embedding_table = nn.Embedding(block_size, n_embd)
+        self.token_embedding_table = nn.Embedding(vocab_size, config.n_embd)
+        self.position_embedding_table = nn.Embedding(config.block_size, config.n_embd)
 
         self.blocks = nn.Sequential(
             *[
                 Block(
-                    n_embd,
-                    n_head=n_head,
-                    block_size=block_size,
-                    dropout=dropout,
+                    config.n_embd,
+                    n_head=config.n_head,
+                    block_size=config.block_size,
+                    dropout=config.dropout,
                 )
-                for _ in range(n_layer)
+                for _ in range(config.n_layer)
             ]
         )
-        self.layer_norm_f = nn.LayerNorm(n_embd)
-        self.language_model_head = nn.Linear(n_embd, vocab_size)
+        self.layer_norm_f = nn.LayerNorm(config.n_embd)
+        self.language_model_head = nn.Linear(config.n_embd, vocab_size)
 
     def forward(
         self,

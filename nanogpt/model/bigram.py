@@ -1,7 +1,21 @@
+from dataclasses import dataclass
 from typing import Optional
+
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+
+
+@dataclass
+class BigramModelConfig:
+    batch_size: int = 32
+    block_size: int = 8
+
+    max_iters: int = 3000
+    eval_interval: int = 300
+    eval_iters: int = 200
+    learning_rate: float = 1e-2
+    train_split: float = 0.9
 
 
 class BigramLanguageModel(nn.Module):
