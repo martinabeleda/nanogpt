@@ -1,111 +1,12 @@
-from dataclasses import dataclass, asdict
+from dataclasses import asdict
+
 import torch
 import torch.nn as nn
-from torch.nn import functional as F
 from loguru import logger
 
-from nanogpt.model.bigram import BigramLanguageModel
-from nanogpt.model.gpt import GPT
-
-
-@dataclass
-class BaseConfig:
-    batch_size = 32
-    block_size = 8
-    max_iters = 3000
-    eval_interval = 300
-    eval_iters = 200
-    learning_rate = 1e-2
-    train_split = 0.9
-
-    @property
-    def device(self) -> str:
-        if torch.has_cuda:
-            return "cuda"
-        elif torch.has_mps:
-            return "mps"
-        else:
-            return "cpu"
-
-
-@dataclass
-class BigramConfig(BaseConfig):
-    def model(self, vocabulary_size: int) -> BigramLanguageModel:
-        model = BigramLanguageModel(vocabulary_size)
-        return model
-
-
-@dataclass
-class GPTConfig(BaseConfig):
-    n_embd = 32
-    n_head = 6
-    n_layer = 6
-    dropout = 0.2
-    max_iters = 5000
-    eval_interval = 500
-    learning_rate = 1e-3
-
-    def model(self, vocabulary_size: int) -> GPT:
-        model = GPT(
-            vocabulary_size,
-            self.n_embd,
-            self.block_size,
-            self.n_head,
-            self.device,
-        )
-        return model
-
-
-def load_dataset() -> str:
-    with open("data/shakespeare/input.txt", "r", encoding="utf-8") as f:
-        text = f.read()
-    logger.info(f"Length of dataset in characters: {len(text)}")
-    logger.info(f"Sample text: {text[:500]}")
-    return text
-
-
-def train_test_split(
-    data: torch.Tensor,
-    train_split: float = 0.9,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    n = int(train_split * len(data))  # first 90% will be train, rest val
-    train_data = data[:n]
-    val_data = data[n:]
-    return train_data, val_data
-
-
-def get_batch(
-    data: torch.Tensor,
-    batch_size: int = 4,
-    block_size: int = 8,
-    device: str = "cpu",
-) -> tuple[torch.Tensor, torch.Tensor]:
-    ix = torch.randint(len(data) - block_size, (batch_size,))
-    x = torch.stack([data[i : i + block_size] for i in ix])
-    y = torch.stack([data[i + 1 : i + block_size + 1] for i in ix])
-    x, y = x.to(device), y.to(device)
-    return x, y
-
-
-@torch.no_grad()
-def estimate_loss(
-    train_data: torch.Tensor,
-    val_data: torch.Tensor,
-    config: BaseConfig,
-    model: nn.Module,
-) -> dict[str, float]:
-    out = {}
-    model.eval()
-    for split in ["train", "val"]:
-        data = train_data if split == "train" else val_data
-        losses = torch.zeros(config.eval_iters)
-        for k in range(config.eval_iters):
-            X, Y = get_batch(data, device=config.device)
-            _, loss = model(X, Y)
-            losses[k] = loss.item()
-        out[split] = losses.mean()
-    model.train()
-    return out
+from nanogpt.config import BaseConfig, GPTConfig
+from nanogpt.dataset import load_dataset, get_batch, train_test_split
+from nanogpt.criterion import estimate_loss
 
 
 def train():
@@ -146,7 +47,7 @@ def train():
 
         xb, yb = get_batch(train_data, device=config.device)
 
-        logits, loss = model(xb, yb)
+        _, loss = model(xb, yb)
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
         optimizer.step()

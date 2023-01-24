@@ -15,21 +15,25 @@ class GPT(nn.Module):
     def __init__(
         self,
         vocab_size: int,
-        n_embd: int = 32,
         block_size: int = 8,
-        n_head: int = 6,
+        n_embd: int = 32,
+        n_head: int = 4,
         device: str = "cpu",
     ):
         super().__init__()
         self.vocab_size = vocab_size
-        self.n_embd = n_embd
         self.block_size = block_size
+        self.n_embd = n_embd
         self.n_head = n_head
         self.device = device
 
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
-        self.self_attention_head = Head(n_embd, n_embd, block_size)
+
+        head_size = n_embd // n_head
+        self.self_attention_heads = MultiHeadAttention(
+            self.n_head, head_size, n_embd, block_size
+        )
         self.language_model_head = nn.Linear(n_embd, vocab_size)
 
     def forward(
@@ -43,7 +47,7 @@ class GPT(nn.Module):
             torch.arange(T, device=self.device)
         )  # (T, C)
         x = token_embeddings + position_embeddings
-        x = self.self_attention_head(x)
+        x = self.self_attention_heads(x)
         logits = self.language_model_head(x)
 
         loss = None
@@ -68,7 +72,20 @@ class GPT(nn.Module):
         return idx
 
 
-class Head(nn.Module):
+class MultiHeadAttention(nn.Module):
+    """Multiple heads of self-attention in parallel"""
+
+    def __init__(self, num_heads: int, head_size: int, n_embd: int, block_size: int):
+        super().__init__()
+        self.heads = nn.ModuleList(
+            [SelfAttentionHead(head_size, n_embd, block_size) for _ in range(num_heads)]
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.cat([h(x) for h in self.heads], dim=-1)
+
+
+class SelfAttentionHead(nn.Module):
     """One head of self-attention"""
 
     def __init__(self, head_size: int, n_embd: int, block_size: int):
