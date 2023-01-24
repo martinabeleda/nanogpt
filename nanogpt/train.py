@@ -7,6 +7,7 @@ import wandb
 from nanogpt.dataset import load_dataset, get_batch, train_test_split
 from nanogpt.criterion import estimate_loss
 from nanogpt.model.gpt import GPT, GPTConfig
+from nanogpt.model.bigram import BigramLanguageModel, BigramModelConfig
 
 
 def get_device() -> str:

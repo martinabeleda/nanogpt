@@ -21,8 +21,10 @@ class BigramModelConfig:
 class BigramLanguageModel(nn.Module):
     """Implements a simple Bigram Language Model"""
 
-    def __init__(self, vocab_size: int):
+    def __init__(self, config: BigramModelConfig, vocab_size: int, device: str):
         super().__init__()
+        self.config = config
+        self.device = device
         self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)
 
     def forward(
