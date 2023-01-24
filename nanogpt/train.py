@@ -1,10 +1,9 @@
 from dataclasses import asdict
 
 import torch
-import torch.nn as nn
 from loguru import logger
 
-from nanogpt.config import BaseConfig, GPTConfig
+from nanogpt.config import GPTConfig
 from nanogpt.dataset import load_dataset, get_batch, train_test_split
 from nanogpt.criterion import estimate_loss
 
@@ -38,7 +37,6 @@ def train():
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
 
     for iter in range(config.max_iters):
-
         if iter % config.eval_interval == 0:
             losses = estimate_loss(train_data, val_data, config, model)
             logger.info(

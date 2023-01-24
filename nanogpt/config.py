@@ -7,8 +7,10 @@ from nanogpt.model.gpt import GPT
 
 @dataclass
 class BaseConfig:
+
     batch_size = 32
     block_size = 8
+
     max_iters = 3000
     eval_interval = 300
     eval_iters = 200
@@ -34,20 +36,26 @@ class BigramConfig(BaseConfig):
 
 @dataclass
 class GPTConfig(BaseConfig):
-    n_embd = 32
-    n_head = 4
-    n_layer = 6
-    dropout = 0.2
+
+    batch_size = 64
+    block_size = 256
+
     max_iters = 5000
     eval_interval = 500
-    learning_rate = 1e-3
+    learning_rate = 3e-4
+
+    n_embd = 384
+    n_head = 6
+    n_layer = 6
+    dropout = 0.2
 
     def model(self, vocabulary_size: int) -> GPT:
-        model = GPT(
+        return GPT(
             vocabulary_size,
-            self.n_embd,
-            self.block_size,
-            self.n_head,
-            self.device,
+            block_size=self.block_size,
+            n_embd=self.n_embd,
+            n_head=self.n_head,
+            n_layer=self.n_layer,
+            dropout=self.dropout,
+            device=self.device,
         )
-        return model

@@ -18,22 +18,29 @@ class GPT(nn.Module):
         block_size: int = 8,
         n_embd: int = 32,
         n_head: int = 4,
+        n_layer: int = 4,
+        dropout: float = 0.2,
         device: str = "cpu",
     ):
         super().__init__()
-        self.vocab_size = vocab_size
         self.block_size = block_size
-        self.n_embd = n_embd
-        self.n_head = n_head
         self.device = device
 
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
 
-        head_size = n_embd // n_head
-        self.self_attention_heads = MultiHeadAttention(
-            self.n_head, head_size, n_embd, block_size
+        self.blocks = nn.Sequential(
+            *[
+                Block(
+                    n_embd,
+                    n_head=n_head,
+                    block_size=block_size,
+                    dropout=dropout,
+                )
+                for _ in range(n_layer)
+            ]
         )
+        self.layer_norm_f = nn.LayerNorm(n_embd)
         self.language_model_head = nn.Linear(n_embd, vocab_size)
 
     def forward(
@@ -47,7 +54,8 @@ class GPT(nn.Module):
             torch.arange(T, device=self.device)
         )  # (T, C)
         x = token_embeddings + position_embeddings
-        x = self.self_attention_heads(x)
+        x = self.blocks(x)
+        x = self.layer_norm_f(x)
         logits = self.language_model_head(x)
 
         loss = None
@@ -72,31 +80,81 @@ class GPT(nn.Module):
         return idx
 
 
-class MultiHeadAttention(nn.Module):
-    """Multiple heads of self-attention in parallel"""
+class Block(nn.Module):
+    "Transformer block - communication followed by computation"
 
-    def __init__(self, num_heads: int, head_size: int, n_embd: int, block_size: int):
+    def __init__(self, n_embd: int, n_head: int, block_size: int, dropout: float):
         super().__init__()
-        self.heads = nn.ModuleList(
-            [SelfAttentionHead(head_size, n_embd, block_size) for _ in range(num_heads)]
+        head_size = n_embd // n_head
+        self.self_attention = MultiHeadAttention(
+            n_head, head_size, n_embd, block_size, dropout
+        )
+        self.feed_forward = FeedForward(n_embd, dropout)
+        self.layer_norm_1 = nn.LayerNorm(n_embd)
+        self.layer_norm_2 = nn.LayerNorm(n_embd)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = x + self.self_attention(self.layer_norm_1(x))
+        x = x + self.feed_forward(self.layer_norm_2(x))
+        return x
+
+
+class FeedForward(nn.Module):
+    """A simple linear layer followed by a non-linearity"""
+
+    scaling_factor = 4
+
+    def __init__(self, n_embd: int, dropout: float):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(n_embd, self.scaling_factor * n_embd),
+            nn.ReLU(),
+            nn.Linear(self.scaling_factor * n_embd, n_embd),
+            nn.Dropout(dropout),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return torch.cat([h(x) for h in self.heads], dim=-1)
+        return self.net(x)
 
 
-class SelfAttentionHead(nn.Module):
+class MultiHeadAttention(nn.Module):
+    """Multiple heads of self-attention in parallel"""
+
+    def __init__(
+        self,
+        num_heads: int,
+        head_size: int,
+        n_embd: int,
+        block_size: int,
+        dropout: float,
+    ):
+        super().__init__()
+        self.heads = nn.ModuleList(
+            [Head(head_size, n_embd, block_size, dropout) for _ in range(num_heads)]
+        )
+        self.projection = nn.Linear(n_embd, n_embd)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = torch.cat([h(x) for h in self.heads], dim=-1)
+        out = self.projection(out)
+        out = self.dropout(out)
+        return out
+
+
+class Head(nn.Module):
     """One head of self-attention"""
 
-    def __init__(self, head_size: int, n_embd: int, block_size: int):
+    def __init__(self, head_size: int, n_embd: int, block_size: int, dropout: float):
         super().__init__()
         self.key = nn.Linear(n_embd, head_size, bias=False)
         self.query = nn.Linear(n_embd, head_size, bias=False)
         self.value = nn.Linear(n_embd, head_size, bias=False)
+        self.dropout = nn.Dropout(dropout)
         self.register_buffer("tril", torch.tril(torch.ones(block_size, block_size)))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        B, T, C = x.shape
+        _, T, C = x.shape
         k = self.key(x)
         q = self.query(x)
 
@@ -104,6 +162,7 @@ class SelfAttentionHead(nn.Module):
         weights = q @ k.transpose(-2, -1) * C**-0.5
         weights = weights.masked_fill(self.tril[:T, :T] == 0, float("-inf"))  # noqa
         weights = F.softmax(weights, dim=-1)
+        weights = self.dropout(weights)
 
         # Perform the weighted aggregation of the values
         v = self.value(x)
