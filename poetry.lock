@@ -1,4 +1,29 @@
 [[package]]
+name = "accelerate"
+version = "0.15.0"
+description = "Accelerate"
+category = "main"
+optional = false
+python-versions = ">=3.7.0"
+
+[package.dependencies]
+numpy = ">=1.17"
+packaging = ">=20.0"
+psutil = "*"
+pyyaml = "*"
+torch = ">=1.4.0"
+
+[package.extras]
+dev = ["black (>=22.0,<23.0)", "isort (>=5.5.4)", "flake8 (>=3.8.3)", "hf-doc-builder (>=0.3.0)", "pytest", "pytest-xdist", "pytest-subtests", "parameterized", "datasets", "evaluate", "transformers", "scipy", "scikit-learn", "deepspeed (<0.7.0)", "tqdm", "rich"]
+quality = ["black (>=22.0,<23.0)", "isort (>=5.5.4)", "flake8 (>=3.8.3)", "hf-doc-builder (>=0.3.0)"]
+rich = ["rich"]
+sagemaker = ["sagemaker"]
+test_dev = ["datasets", "evaluate", "transformers", "scipy", "scikit-learn", "deepspeed (<0.7.0)", "tqdm"]
+test_prod = ["pytest", "pytest-xdist", "pytest-subtests", "parameterized"]
+test_trackers = ["wandb", "comet-ml", "tensorboard"]
+testing = ["pytest", "pytest-xdist", "pytest-subtests", "parameterized", "datasets", "evaluate", "transformers", "scipy", "scikit-learn", "deepspeed (<0.7.0)", "tqdm"]
+
+[[package]]
 name = "anyio"
 version = "3.6.2"
 description = "High level compatibility layer for multiple asynchronous event loop implementations"
@@ -1610,9 +1635,10 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "flake8 (<5)", "pytest-co
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "af5c4799414447d1fbb82375cae82d7453e3c089a23f74c925cf165f3af217f8"
+content-hash = "885afc91dabe41e68e0e7ef7e0962a8915157521296cbdcd300b32557a6491f9"
 
 [metadata.files]
+accelerate = []
 anyio = []
 appdirs = [
     {file = "appdirs-1.4.4-py2.py3-none-any.whl", hash = "sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128"},

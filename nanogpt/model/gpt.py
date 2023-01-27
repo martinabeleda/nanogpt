@@ -8,7 +8,7 @@ from torch.nn import functional as F
 
 @dataclass
 class GPTConfig:
-    max_iters: int = 5000
+    max_iters: int = 7000
     eval_interval: int = 500
     learning_rate: float = 3e-4
     eval_iters: int = 200
