@@ -1,4 +1,3 @@
-import dataclasses
 import random
 
 import evaluate
@@ -13,7 +12,7 @@ from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 from transformers import AutoTokenizer
 
-from nanogpt.model.gpt import GPT
+from nanogpt.model.transformer import Transformer
 
 
 class Trainer:
@@ -22,22 +21,27 @@ class Trainer:
         self.config = config
 
     def train(self):
-        wandb.init(project="nanogpt", config=OmegaConf.to_container(self.config, resolve=True))
+        wandb.init(
+            project="nanogpt",
+            config=OmegaConf.to_container(self.config, resolve=True),
+        )
         logger.info(f"Resolved config: {OmegaConf.to_yaml(self.config)}")
 
         tokenizer = self.config.dataset.tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer)
         logger.info(f"Tokenizer {tokenizer} with {len(self.tokenizer)} tokens")
 
-        dataset = self.load_dataset()
-        logger.debug(f"Dataset: {dataset}")
-        logger.info(f"Dataset sample: {dataset['train'][100]}")
+        datasets = self.load_dataset()
+        logger.debug(f"Dataset: {datasets}")
+        logger.info(f"Dataset sample: {datasets['train'][100]}")
 
-        self.dataloaders = self.to_dataloader(self.tokenize_dataset(dataset))
+        self.dataloaders = self.to_dataloader(self.tokenize_dataset(datasets))
 
         self.load_model()
         self.load_optimizer()
-        self.model, self.optimizer = self.accelerator.prepare(self.model, self.optimizer)
+        self.model, self.optimizer = self.accelerator.prepare(
+            self.model, self.optimizer
+        )
 
         self.train_loop()
         self.save_model()
@@ -47,12 +51,15 @@ class Trainer:
 
     def tokenize_dataset(self, dataset):
         logger.info("Tokenizing dataset")
-        tokenize = lambda examples: self.tokenizer(
-            examples["text"],
-            padding="max_length",
-            max_length=self.config.model.block_size,
-            truncation=True,
-        )
+
+        def tokenize(examples):
+            return self.tokenizer(
+                examples["text"],
+                padding="max_length",
+                max_length=self.config.model.block_size,
+                truncation=True,
+            )
+
         tokenized_datasets = dataset.map(tokenize, batched=True)
 
         tokenized_datasets = tokenized_datasets.remove_columns(["text"])
@@ -85,7 +92,7 @@ class Trainer:
         }
 
     def load_model(self):
-        self.model = GPT(
+        self.model = Transformer(
             config=self.config.model,
             vocab_size=len(self.tokenizer),
             device=self.accelerator.device,
@@ -103,8 +110,8 @@ class Trainer:
         for epoch in range(self.config.train.epochs):
             logger.info(f"Epoch: {epoch}")
             for batch in tqdm(self.dataloaders["train"]):
-                idx, targets = batch["input_ids"], batch["labels"]
-                _, loss = self.model(idx, targets)
+                inputs, targets = batch["input_ids"], batch["labels"]
+                _, loss = self.model(inputs, targets)
                 self.accelerator.backward(loss)
 
                 self.optimizer.step()
@@ -121,8 +128,8 @@ class Trainer:
         loss = 0.0
         for batch in tqdm(self.dataloaders["eval"]):
             with torch.no_grad():
-                idx, targets = batch["input_ids"], batch["labels"]
-                logits, loss = self.model(idx, targets)
+                inputs, targets = batch["input_ids"], batch["labels"]
+                logits, loss = self.model(inputs, targets)
 
             predictions = torch.argmax(logits, dim=-1)
             metric.add_batch(predictions=predictions, references=batch["labels"])
@@ -132,7 +139,7 @@ class Trainer:
         logger.info(f"Evaluation metrics: {metrics}")
         wandb.log(metrics)
 
-        self.show_samples(idx, predictions, targets)
+        self.show_samples(inputs, predictions, targets)
 
     def show_samples(
         self,
@@ -140,15 +147,23 @@ class Trainer:
         predictions: torch.Tensor,
         targets: torch.Tensor,
     ):
-        logger.info(f"Sample predictions:")
+        logger.info("Sample predictions:")
         inputs = self.tokenizer.batch_decode(inputs, skip_special_tokens=True)
-        predicted_sentiment = lambda x: "Positive" if predictions[x] == 1 else "Negative"
-        target_sentiment = lambda x: "Positive" if targets[x] == 1 else "Negative"
+
+        def predicted_sentiment(x):
+            return "Positive" if predictions[x] == 1 else "Negative"
+
+        def target_sentiment(x):
+            return "Positive" if targets[x] == 1 else "Negative"
+
         for _ in range(min(self.config.eval.num_samples, len(targets))):
-            idx = random.randint(0, len(targets) - 1)
-            logger.info(
-                f"Text: {inputs[idx]} Predicted: {predicted_sentiment(idx)} Target: {target_sentiment(idx)}"
+            inputs = random.randint(0, len(targets) - 1)
+            msg = (
+                f"Text: {inputs[inputs]} "
+                f"Predicted: {predicted_sentiment(inputs)} "
+                f"Target: {target_sentiment(inputs)}"
             )
+            logger.info(msg)
 
     def save_model(self):
         model_path = "models/model.pth"

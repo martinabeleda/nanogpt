@@ -6,8 +6,8 @@ from omegaconf import DictConfig
 from torch.nn import functional as F
 
 
-class GPT(nn.Module):
-    """Implements a simple GPT
+class Transformer(nn.Module):
+    """Implements a simple Transformer
 
     Args:
         vocab_size: Size of the vocabulary in tokens
@@ -105,7 +105,9 @@ class Block(nn.Module):
     def __init__(self, n_embd: int, n_head: int, block_size: int, dropout: float):
         super().__init__()
         head_size = n_embd // n_head
-        self.self_attention = MultiHeadAttention(n_head, head_size, n_embd, block_size, dropout)
+        self.self_attention = MultiHeadAttention(
+            n_head, head_size, n_embd, block_size, dropout
+        )
         self.feed_forward = FeedForward(n_embd, dropout)
         self.layer_norm_1 = nn.LayerNorm(n_embd)
         self.layer_norm_2 = nn.LayerNorm(n_embd)
@@ -147,7 +149,10 @@ class MultiHeadAttention(nn.Module):
     ):
         super().__init__()
         self.heads = nn.ModuleList(
-            [Head(head_size, n_embd, block_size, dropout) for _ in range(num_heads)]
+            [
+                SelfAttention(head_size, n_embd, block_size, dropout)
+                for _ in range(num_heads)
+            ]
         )
         self.projection = nn.Linear(n_embd, n_embd)
         self.dropout = nn.Dropout(dropout)
@@ -159,7 +164,7 @@ class MultiHeadAttention(nn.Module):
         return out
 
 
-class Head(nn.Module):
+class SelfAttention(nn.Module):
     """One head of self-attention"""
 
     def __init__(self, head_size: int, n_embd: int, block_size: int, dropout: float):

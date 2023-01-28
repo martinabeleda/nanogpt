@@ -4,7 +4,8 @@ import requests
 from loguru import logger
 
 DATA_URL = (
-    "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
+    "https://raw.githubusercontent.com/"
+    "karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
 )
 DATA_PATH = "input.txt"
 

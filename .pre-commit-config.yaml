@@ -1,0 +1,31 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: local
+    hooks:
+      - id: black
+        name: Run black
+        entry: black
+        language: system
+        types: [python]
+  - repo: local
+    hooks:
+      - id: ruff
+        name: Run ruff
+        entry: ruff --fix
+        language: system
+        types: [python]
+  - repo: local
+    hooks:
+      - id: isort
+        name: Run isort
+        entry: isort
+        language: system
+        types: [python]
