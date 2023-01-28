@@ -8,11 +8,11 @@ from torch.nn import functional as F
 
 @dataclass
 class GPTConfig:
-    max_iters: int = 7000
-    eval_interval: int = 500
-    learning_rate: float = 3e-4
+    eval_interval: int = 200
+    learning_rate: float = 1e-3
     eval_iters: int = 200
     train_split: float = 0.9
+    num_epochs: int = 1
 
     batch_size: int = 64
     block_size: int = 256
@@ -20,6 +20,8 @@ class GPTConfig:
     n_head: int = 6
     n_layer: int = 6
     dropout: float = 0.2
+    num_labels: int = 1
+    hidden_size: int = 128
 
 
 class GPT(nn.Module):
@@ -56,14 +58,19 @@ class GPT(nn.Module):
             ]
         )
         self.layer_norm_f = nn.LayerNorm(config.n_embd)
-        self.language_model_head = nn.Linear(config.n_embd, vocab_size)
+
+        self.classifier = BinaryClassifier(
+            input_size=config.n_embd,
+            hidden_size=config.hidden_size,
+            num_classes=config.num_labels,
+        )
 
     def forward(
         self,
         idx: torch.Tensor,
         targets: Optional[torch.Tensor] = None,
     ) -> tuple[torch.Tensor, Optional[torch.Tensor]]:
-        B, T = idx.shape
+        _, T = idx.shape
         token_embeddings = self.token_embedding_table(idx)  # (batch, time, channel)
         position_embeddings = self.position_embedding_table(
             torch.arange(T, device=self.device)
@@ -71,14 +78,15 @@ class GPT(nn.Module):
         x = token_embeddings + position_embeddings
         x = self.blocks(x)
         x = self.layer_norm_f(x)
-        logits = self.language_model_head(x)
+
+        # Convert embeddings to binary classifications
+        logits = self.classifier(x)
 
         loss = None
         if targets is not None:
             # Reshape logits to match (batch, channel) for cross entropy
-            B, T, C = logits.shape
-            logits = logits.view(B * T, C)
-            targets = targets.view(B * T)
+            B, T, _ = logits.shape
+            logits = logits.view(B, T)
             loss = F.cross_entropy(logits, targets)
 
         return logits, loss
@@ -93,6 +101,20 @@ class GPT(nn.Module):
             idx_next = torch.multinomial(probabilities, num_samples=1)  # (batch, 1)
             idx = torch.cat((idx, idx_next), dim=1)  # (batch, time + 1)
         return idx
+
+
+class BinaryClassifier(nn.Module):
+    def __init__(self, input_size, hidden_size, num_classes):
+        super(BinaryClassifier, self).__init__()
+        self.linear = nn.Linear(input_size, hidden_size)
+        self.sigmoid = nn.Sigmoid()
+        self.linear_out = nn.Linear(hidden_size, num_classes)
+
+    def forward(self, x):
+        x = self.linear(x)
+        x = self.sigmoid(x)
+        x = self.linear_out(x)
+        return x
 
 
 class Block(nn.Module):
