@@ -43,6 +43,14 @@ yarl = ">=1.0,<2.0"
 speedups = ["aiodns", "brotlipy", "cchardet"]
 
 [[package]]
+name = "antlr4-python3-runtime"
+version = "4.9.3"
+description = "ANTLR 4.9.3 runtime for Python 3.7"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "anyio"
 version = "3.6.2"
 description = "High level compatibility layer for multiple asynchronous event loop implementations"
@@ -546,6 +554,19 @@ tensorflow = ["tensorflow", "pydot", "graphviz"]
 testing = ["InquirerPy (==0.3.4)", "isort (>=5.5.4)", "jedi", "jinja2", "pytest", "pytest-cov", "pytest-env", "pytest-xdist", "soundfile", "pillow"]
 torch = ["torch"]
 typing = ["types-pyyaml", "types-requests", "types-simplejson", "types-toml", "types-tqdm", "types-urllib3"]
+
+[[package]]
+name = "hydra-core"
+version = "1.3.1"
+description = "A framework for elegantly configuring complex applications"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+antlr4-python3-runtime = ">=4.9.0,<4.10.0"
+omegaconf = ">=2.2,<2.4"
+packaging = "*"
 
 [[package]]
 name = "idna"
@@ -1203,6 +1224,18 @@ description = "cuDNN runtime libraries"
 category = "main"
 optional = false
 python-versions = ">=3"
+
+[[package]]
+name = "omegaconf"
+version = "2.3.0"
+description = "A flexible configuration library"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+antlr4-python3-runtime = ">=4.9.0,<4.10.0"
+PyYAML = ">=5.1.0"
 
 [[package]]
 name = "packaging"
@@ -2131,11 +2164,12 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "flake8 (<5)", "pytest-co
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "24da8bc2b14a15bb27745f22972bc181198e72d9b349681e8789b53c8c6588f0"
+content-hash = "4f8f712c3b8ab9d18fa1216a212b443757b9b7b7c2e40c3b853afbb722931e63"
 
 [metadata.files]
 accelerate = []
 aiohttp = []
+antlr4-python3-runtime = []
 anyio = []
 appdirs = [
     {file = "appdirs-1.4.4-py2.py3-none-any.whl", hash = "sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128"},
@@ -2219,6 +2253,7 @@ fsspec = []
 gitdb = []
 gitpython = []
 huggingface-hub = []
+hydra-core = []
 idna = []
 importlib-metadata = []
 iniconfig = []
@@ -2278,6 +2313,7 @@ nvidia-cublas-cu11 = []
 nvidia-cuda-nvrtc-cu11 = []
 nvidia-cuda-runtime-cu11 = []
 nvidia-cudnn-cu11 = []
+omegaconf = []
 packaging = []
 pandas = []
 pandocfilters = [

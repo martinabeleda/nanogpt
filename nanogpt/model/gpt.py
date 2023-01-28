@@ -1,27 +1,9 @@
-from dataclasses import dataclass
 from typing import Optional
 
 import torch
 import torch.nn as nn
+from omegaconf import DictConfig
 from torch.nn import functional as F
-
-
-@dataclass
-class GPTConfig:
-    eval_interval: int = 200
-    learning_rate: float = 1e-3
-    eval_iters: int = 200
-    train_split: float = 0.9
-    num_epochs: int = 1
-
-    batch_size: int = 64
-    block_size: int = 256
-    n_embd: int = 384
-    n_head: int = 6
-    n_layer: int = 6
-    dropout: float = 0.2
-    num_labels: int = 1
-    hidden_size: int = 128
 
 
 class GPT(nn.Module):
@@ -34,7 +16,7 @@ class GPT(nn.Module):
 
     def __init__(
         self,
-        config: GPTConfig,
+        config: DictConfig,
         vocab_size: int,
         device: str = "cpu",
     ):
@@ -62,7 +44,7 @@ class GPT(nn.Module):
         self.classifier = BinaryClassifier(
             input_size=config.n_embd,
             hidden_size=config.hidden_size,
-            num_classes=config.num_labels,
+            num_classes=config.n_labels,
         )
 
     def forward(
@@ -123,9 +105,7 @@ class Block(nn.Module):
     def __init__(self, n_embd: int, n_head: int, block_size: int, dropout: float):
         super().__init__()
         head_size = n_embd // n_head
-        self.self_attention = MultiHeadAttention(
-            n_head, head_size, n_embd, block_size, dropout
-        )
+        self.self_attention = MultiHeadAttention(n_head, head_size, n_embd, block_size, dropout)
         self.feed_forward = FeedForward(n_embd, dropout)
         self.layer_norm_1 = nn.LayerNorm(n_embd)
         self.layer_norm_2 = nn.LayerNorm(n_embd)

@@ -1,6 +1,7 @@
 # nanogpt
 
-Implementation of GPT in pytorch
+Implementation of `nanogpt` from karpathy. I've modified this model to text classification
+by chopping off the language model head and adding a binary classifier on top.
 
 ## Development
 
@@ -11,5 +12,5 @@ poetry install
 ## Training
 
 ```shell
-python -m nanpgpt.train
+python train.py
 ```
