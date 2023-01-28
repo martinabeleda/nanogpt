@@ -681,6 +681,20 @@ python-versions = ">=3.7"
 arrow = ">=0.15.0"
 
 [[package]]
+name = "isort"
+version = "5.11.4"
+description = "A Python utility / library to sort Python imports."
+category = "dev"
+optional = false
+python-versions = ">=3.7.0"
+
+[package.extras]
+colors = ["colorama (>=0.4.3,<0.5.0)"]
+requirements-deprecated-finder = ["pip-api", "pipreqs"]
+pipfile-deprecated-finder = ["pipreqs", "requirementslib"]
+plugins = ["setuptools"]
+
+[[package]]
 name = "jedi"
 version = "0.18.2"
 description = "An autocompletion tool for Python that can be used for text editors."
@@ -2117,7 +2131,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "flake8 (<5)", "pytest-co
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "6f007040bdd35fcadff0b9d250b35496d0904a6d149fb20f0d78136a7a829df9"
+content-hash = "24da8bc2b14a15bb27745f22972bc181198e72d9b349681e8789b53c8c6588f0"
 
 [metadata.files]
 accelerate = []
@@ -2216,6 +2230,7 @@ ipython-genutils = [
 ]
 ipywidgets = []
 isoduration = []
+isort = []
 jedi = []
 jinja2 = [
     {file = "Jinja2-3.1.2-py3-none-any.whl", hash = "sha256:6088930bfe239f0e6710546ab9c19c9ef35e29792895fed6e6e31a023a182a61"},

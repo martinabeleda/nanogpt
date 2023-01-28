@@ -1,6 +1,6 @@
 import os
-import requests
 
+import requests
 from loguru import logger
 
 DATA_URL = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"

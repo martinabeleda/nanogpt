@@ -26,6 +26,7 @@ tqdm = "^4.64.1"
 black = "^22.12.0"
 ruff = "^0.0.228"
 pytest = "^7.2.1"
+isort = "^5.11.4"
 
 [tool.poetry.scripts]
 train = "nanogpt.train:train"
@@ -33,3 +34,15 @@ train = "nanogpt.train:train"
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 100
+use_parentheses = true
+known_first_party = "nanogpt"
+known_third_party = ["wandb"]
+
+[tool.black]
+max-line-length = 100
+line-length = 100

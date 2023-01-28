@@ -1,17 +1,16 @@
-from dataclasses import asdict
 import random
+from dataclasses import asdict
 
-import torch
-from torch.utils.data import DataLoader
-import wandb
-from loguru import logger
-from accelerate import Accelerator
-from transformers import AutoTokenizer
-from datasets import load_dataset
-from tqdm.auto import tqdm
 import evaluate
+import torch
+import wandb
+from accelerate import Accelerator
+from datasets import load_dataset
+from loguru import logger
+from torch.utils.data import DataLoader
+from tqdm.auto import tqdm
+from transformers import AutoTokenizer
 
-from nanogpt.criterion import estimate_loss
 from nanogpt.model.gpt import GPT, GPTConfig
 
 
@@ -36,9 +35,7 @@ class Trainer:
 
         self.load_model()
         self.load_optimizer()
-        self.model, self.optimizer = self.accelerator.prepare(
-            self.model, self.optimizer
-        )
+        self.model, self.optimizer = self.accelerator.prepare(self.model, self.optimizer)
 
         self.train_loop()
         self.eval_loop()
@@ -125,9 +122,7 @@ class Trainer:
 
         logger.info(f"Sample predictions:")
         inputs = self.tokenizer.batch_decode(idx, skip_special_tokens=True)
-        predicted_sentiment = (
-            lambda x: "Positive" if predictions[x] == 1 else "Negative"
-        )
+        predicted_sentiment = lambda x: "Positive" if predictions[x] == 1 else "Negative"
         target_sentiment = lambda x: "Positive" if targets[x] == 1 else "Negative"
         for _ in range(min(10, len(targets))):
             idx = random.randint(0, len(targets) - 1)
