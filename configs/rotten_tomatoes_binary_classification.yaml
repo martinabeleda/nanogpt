@@ -1,0 +1,30 @@
+# Config to train nanogpt to predict sentiment of
+# rotten tomatoes reviews
+seed: 1337
+
+model:
+  name: Transformer
+  block_size: 256
+  batch_size: 64
+  n_embd: 384
+  n_layer: 6
+  n_head: 6
+  n_labels: 1
+  dropout: 0.2
+  hidden_size: 128
+
+optimizer:
+  learning_rate: 3e-4
+
+dataset:
+  name: "rotten_tomatoes"
+  tokenizer: "bert-base-cased"
+
+train:
+  epochs: 10
+  num_examples: 8530
+
+eval:
+  metric: accuracy
+  num_examples: 1000
+  num_samples: 10

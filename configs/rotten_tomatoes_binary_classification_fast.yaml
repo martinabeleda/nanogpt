@@ -3,7 +3,7 @@
 seed: 1337
 
 model:
-  name: "GPT"
+  name: Transformer
   block_size: 256
   batch_size: 64
   n_embd: 384
@@ -14,17 +14,17 @@ model:
   hidden_size: 128
 
 optimizer:
-  learning_rate: 3e-4
+  learning_rate: 1e-3
 
 dataset:
   name: "rotten_tomatoes"
   tokenizer: "bert-base-cased"
 
 train:
-  epochs: 5
-  num_examples: 5000
+  epochs: 2
+  num_examples: 200
 
 eval:
   metric: accuracy
-  num_examples: 1000
-  num_samples: 10
+  num_examples: 100
+  num_samples: 5

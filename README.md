@@ -11,6 +11,14 @@ poetry install
 
 ## Training
 
+Test run:
+
 ```shell
-python train.py
+python train.py --config-name rotten_tomatoes_binary_classification_fast
+```
+
+Full training run:
+
+```shell
+python train.py --config-name rotten_tomatoes_binary_classification
 ```

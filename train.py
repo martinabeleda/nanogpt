@@ -157,11 +157,11 @@ class Trainer:
             return "Positive" if targets[x] == 1 else "Negative"
 
         for _ in range(min(self.config.eval.num_samples, len(targets))):
-            inputs = random.randint(0, len(targets) - 1)
+            index = random.randint(0, len(targets) - 1)
             msg = (
-                f"Text: {inputs[inputs]} "
-                f"Predicted: {predicted_sentiment(inputs)} "
-                f"Target: {target_sentiment(inputs)}"
+                f"Text: {inputs[index]} "
+                f"Predicted: {predicted_sentiment(index)} "
+                f"Target: {target_sentiment(index)}"
             )
             logger.info(msg)
 
@@ -175,7 +175,7 @@ class Trainer:
         wandb.log_artifact(artifact)
 
 
-@hydra.main(version_base=None, config_path=".", config_name="config")
+@hydra.main(version_base=None, config_path="configs", config_name="config")
 def main(cfg: DictConfig):
     Trainer(cfg).train()
 
