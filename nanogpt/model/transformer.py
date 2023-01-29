@@ -41,6 +41,8 @@ class Transformer(nn.Module):
         )
         self.layer_norm_f = nn.LayerNorm(config.n_embd)
 
+        self.pooler = Pooler(config.n_embd)
+
         self.classifier = BinaryClassifier(
             input_size=config.n_embd,
             hidden_size=config.hidden_size,
@@ -61,28 +63,33 @@ class Transformer(nn.Module):
         x = self.blocks(x)
         x = self.layer_norm_f(x)
 
+        x = self.pooler(x)
+
         # Convert embeddings to binary classifications
         logits = self.classifier(x)
+        predictions = torch.sigmoid(logits)
 
         loss = None
         if targets is not None:
-            # Reshape logits to match (batch, channel) for cross entropy
-            B, T, _ = logits.shape
-            logits = logits.view(B, T)
-            loss = F.cross_entropy(logits, targets)
+            predictions = predictions.view(-1)
+            loss = F.binary_cross_entropy(predictions, targets.to(torch.float32))
 
-        return logits, loss
+        return predictions, loss
 
-    def generate(self, idx: torch.Tensor, max_new_tokens: int = 100):
-        for _ in range(max_new_tokens):
-            idx_context = idx[:, -self.block_size :]
-            logits, _ = self(idx_context)
-            # Last time step is the prediction for what comes next
-            logits = logits[:, -1, :]  # (batch, time)
-            probabilities = F.softmax(logits, dim=-1)  # (batch, time)
-            idx_next = torch.multinomial(probabilities, num_samples=1)  # (batch, 1)
-            idx = torch.cat((idx, idx_next), dim=1)  # (batch, time + 1)
-        return idx
+
+class Pooler(nn.Module):
+    def __init__(self, hidden_size: int):
+        super().__init__()
+        self.dense = nn.Linear(hidden_size, hidden_size)
+        self.activation = nn.Tanh()
+
+    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
+        # We "pool" the model by taking the hidden state corresponding
+        # to the first token
+        first_token_tensor = hidden_states[:, 0]
+        output = self.dense(first_token_tensor)
+        output = self.activation(output)
+        return output
 
 
 class BinaryClassifier(nn.Module):

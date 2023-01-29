@@ -21,8 +21,9 @@ dataset:
   tokenizer: "bert-base-cased"
 
 train:
-  epochs: 2
-  num_examples: 200
+  epochs: 4
+  metric: accuracy
+  num_examples: 500
 
 eval:
   metric: accuracy

@@ -18,7 +18,13 @@ from nanogpt.model.transformer import Transformer
 class Trainer:
     def __init__(self, config: DictConfig):
         self.accelerator = Accelerator()
+        logger.info(f"Device: {self.accelerator.device}")
+
         self.config = config
+
+    @property
+    def device(self) -> str:
+        return self.accelerator.device
 
     def train(self):
         wandb.init(
@@ -95,8 +101,9 @@ class Trainer:
         self.model = Transformer(
             config=self.config.model,
             vocab_size=len(self.tokenizer),
-            device=self.accelerator.device,
+            device=self.device,
         )
+        self.model.to(self.device)
 
     def load_optimizer(self):
         self.optimizer = torch.optim.AdamW(
@@ -105,20 +112,28 @@ class Trainer:
         )
 
     def train_loop(self):
+        metric = evaluate.load(self.config.train.metric)
         self.model.train()
         loss = 0.0
         for epoch in range(self.config.train.epochs):
             logger.info(f"Epoch: {epoch}")
             for batch in tqdm(self.dataloaders["train"]):
+                batch = {k: v.to(self.device) for k, v in batch.items()}
                 inputs, targets = batch["input_ids"], batch["labels"]
-                _, loss = self.model(inputs, targets)
+                predictions, loss = self.model(inputs, targets)
                 self.accelerator.backward(loss)
 
                 self.optimizer.step()
                 self.optimizer.zero_grad()
 
-            logger.info(f"Finished epoch: {epoch}, train/loss: {loss}")
-            wandb.log({"train/loss": loss})
+                metric.add_batch(predictions=predictions, references=targets)
+
+            metrics = {
+                "train/loss": loss.item(),
+                "train/accuracy": metric.compute()["accuracy"],
+            }
+            wandb.log(metrics)
+            logger.info(f"Metrics: {metrics}")
 
             self.eval_loop()
 
@@ -127,15 +142,18 @@ class Trainer:
         self.model.eval()
         loss = 0.0
         for batch in tqdm(self.dataloaders["eval"]):
+            batch = {k: v.to(self.device) for k, v in batch.items()}
             with torch.no_grad():
                 inputs, targets = batch["input_ids"], batch["labels"]
-                logits, loss = self.model(inputs, targets)
+                predictions, loss = self.model(inputs, targets)
 
-            predictions = torch.argmax(logits, dim=-1)
-            metric.add_batch(predictions=predictions, references=batch["labels"])
+            metric.add_batch(predictions=predictions, references=targets)
 
-        metric = metric.compute()
-        metrics = {"eval/loss": loss, "eval/accuracy": metric["accuracy"]}
+        logger.info(f"{predictions=} {targets=}")
+        metrics = {
+            "eval/loss": loss.item(),
+            "eval/accuracy": metric.compute()["accuracy"],
+        }
         logger.info(f"Evaluation metrics: {metrics}")
         wandb.log(metrics)
 
