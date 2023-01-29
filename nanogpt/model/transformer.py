@@ -41,13 +41,9 @@ class Transformer(nn.Module):
         )
         self.layer_norm_f = nn.LayerNorm(config.n_embd)
 
-        self.pooler = Pooler(config.n_embd)
-
-        self.classifier = BinaryClassifier(
-            input_size=config.n_embd,
-            hidden_size=config.hidden_size,
-            num_classes=config.n_labels,
-        )
+        self.pre_classifier = nn.Linear(config.n_embd, config.n_embd)
+        self.classifier = nn.Linear(config.n_embd, config.n_labels)
+        self.dropout = nn.Dropout(config.dropout)
 
     def forward(
         self,
@@ -62,48 +58,17 @@ class Transformer(nn.Module):
         x = token_embeddings + position_embeddings
         x = self.blocks(x)
         x = self.layer_norm_f(x)
+        x = x.mean(1)
 
-        x = self.pooler(x)
-
-        # Convert embeddings to binary classifications
-        logits = self.classifier(x)
-        predictions = torch.sigmoid(logits)
+        x = self.pre_classifier(x)
+        x = self.classifier(x)
+        logits = self.dropout(x)
 
         loss = None
         if targets is not None:
-            predictions = predictions.view(-1)
-            loss = F.binary_cross_entropy(predictions, targets.to(torch.float32))
+            loss = F.cross_entropy(logits, targets)
 
-        return predictions, loss
-
-
-class Pooler(nn.Module):
-    def __init__(self, hidden_size: int):
-        super().__init__()
-        self.dense = nn.Linear(hidden_size, hidden_size)
-        self.activation = nn.Tanh()
-
-    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
-        # We "pool" the model by taking the hidden state corresponding
-        # to the first token
-        first_token_tensor = hidden_states[:, 0]
-        output = self.dense(first_token_tensor)
-        output = self.activation(output)
-        return output
-
-
-class BinaryClassifier(nn.Module):
-    def __init__(self, input_size, hidden_size, num_classes):
-        super(BinaryClassifier, self).__init__()
-        self.linear = nn.Linear(input_size, hidden_size)
-        self.sigmoid = nn.Sigmoid()
-        self.linear_out = nn.Linear(hidden_size, num_classes)
-
-    def forward(self, x):
-        x = self.linear(x)
-        x = self.sigmoid(x)
-        x = self.linear_out(x)
-        return x
+        return logits, loss
 
 
 class Block(nn.Module):

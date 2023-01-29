@@ -9,7 +9,7 @@ model:
   n_embd: 384
   n_layer: 6
   n_head: 6
-  n_labels: 1
+  n_labels: 2
   dropout: 0.2
   hidden_size: 128
 
@@ -22,6 +22,7 @@ dataset:
 
 train:
   epochs: 10
+  metric: accuracy
   num_examples: 8530
 
 eval:

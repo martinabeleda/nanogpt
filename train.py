@@ -120,12 +120,13 @@ class Trainer:
             for batch in tqdm(self.dataloaders["train"]):
                 batch = {k: v.to(self.device) for k, v in batch.items()}
                 inputs, targets = batch["input_ids"], batch["labels"]
-                predictions, loss = self.model(inputs, targets)
+                logits, loss = self.model(inputs, targets)
                 self.accelerator.backward(loss)
 
                 self.optimizer.step()
                 self.optimizer.zero_grad()
 
+                predictions = logits.argmax(axis=1)
                 metric.add_batch(predictions=predictions, references=targets)
 
             metrics = {
@@ -145,11 +146,11 @@ class Trainer:
             batch = {k: v.to(self.device) for k, v in batch.items()}
             with torch.no_grad():
                 inputs, targets = batch["input_ids"], batch["labels"]
-                predictions, loss = self.model(inputs, targets)
+                logits, loss = self.model(inputs, targets)
+                predictions = logits.argmax(axis=1)
 
             metric.add_batch(predictions=predictions, references=targets)
 
-        logger.info(f"{predictions=} {targets=}")
         metrics = {
             "eval/loss": loss.item(),
             "eval/accuracy": metric.compute()["accuracy"],
@@ -177,9 +178,9 @@ class Trainer:
         for _ in range(min(self.config.eval.num_samples, len(targets))):
             index = random.randint(0, len(targets) - 1)
             msg = (
-                f"Text: {inputs[index]} "
-                f"Predicted: {predicted_sentiment(index)} "
-                f"Target: {target_sentiment(index)}"
+                f"Text: {inputs[index]}\n"
+                f"Predicted: {predicted_sentiment(index)}\n"
+                f"Target: {target_sentiment(index)}\n"
             )
             logger.info(msg)
 

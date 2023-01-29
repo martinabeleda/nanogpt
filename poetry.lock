@@ -658,7 +658,7 @@ test = ["flaky", "ipyparallel", "pre-commit", "pytest-asyncio", "pytest-cov", "p
 
 [[package]]
 name = "ipython"
-version = "8.8.0"
+version = "8.9.0"
 description = "IPython: Productive Interactive Computing"
 category = "main"
 optional = false
@@ -673,7 +673,7 @@ jedi = ">=0.16"
 matplotlib-inline = "*"
 pexpect = {version = ">4.3", markers = "sys_platform != \"win32\""}
 pickleshare = "*"
-prompt-toolkit = ">=3.0.11,<3.1.0"
+prompt-toolkit = ">=3.0.30,<3.1.0"
 pygments = ">=2.4.0"
 stack-data = "*"
 traitlets = ">=5"
@@ -2231,7 +2231,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "flake8 (<5)", "pytest-co
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "730e9634ac7f2bcacc750edcbbc8aa538ecf236f671c72b3a482439fdba48485"
+content-hash = "a21a83f5b6fac0a4a36156ccbf5f9fd61247b498b5e39ac42023c0f7e38c10f4"
 
 [metadata.files]
 accelerate = []

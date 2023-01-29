@@ -29,6 +29,7 @@ ruff = "^0.0.228"
 pytest = "^7.2.1"
 isort = "^5.11.4"
 pre-commit = "^3.0.1"
+ipython = "^8.9.0"
 
 [tool.poetry.scripts]
 train = "nanogpt.train:train"
