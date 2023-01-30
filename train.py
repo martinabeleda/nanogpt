@@ -45,6 +45,7 @@ class Trainer:
 
         self.load_model()
         self.load_optimizer()
+        self.get_scheduler()
         self.model, self.optimizer = self.accelerator.prepare(
             self.model, self.optimizer
         )
@@ -111,6 +112,14 @@ class Trainer:
             lr=self.config.optimizer.learning_rate,
         )
 
+    def get_scheduler(self):
+        config = self.config.optimizer.lr_scheduler
+        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            self.optimizer,
+            milestones=config.milestones,
+            gamma=config.gamma,
+        )
+
     def train_loop(self):
         metric = evaluate.load(self.config.train.metric)
         self.model.train()
@@ -128,6 +137,8 @@ class Trainer:
 
                 predictions = logits.argmax(axis=1)
                 metric.add_batch(predictions=predictions, references=targets)
+
+            self.scheduler.step()
 
             metrics = {
                 "train/loss": loss.item(),
