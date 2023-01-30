@@ -28,7 +28,12 @@ train:
   metric: accuracy
   num_examples: 5000
 
+val:
+  metric: accuracy
+  num_examples: 1066
+  num_samples: 3
+
 eval:
   metric: accuracy
-  num_examples: 1000
+  num_examples: 1066
   num_samples: 3
