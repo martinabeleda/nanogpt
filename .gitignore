@@ -132,3 +132,7 @@ wandb/
 models/
 artifacts/
 outputs/
+out*/
+data/**/*.bin
+data/**/*.pkl
+data/**/input.txt

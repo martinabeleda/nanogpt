@@ -1,0 +1,53 @@
+# Default config: trains a GPT-2 (124M) on OpenWebText.
+# Override with: uv run python train.py --config-name train_shakespeare_char
+
+defaults:
+  - _self_
+
+# I/O
+out_dir: out
+eval_interval: 2000
+log_interval: 1
+eval_iters: 200
+eval_only: false
+always_save_checkpoint: true
+init_from: scratch  # 'scratch', 'resume', or 'gpt2*'
+
+# wandb
+wandb_log: false
+wandb_project: nanogpt
+wandb_run_name: gpt2
+
+# data
+dataset: openwebtext
+data_dir: /data/openwebtext/2026-03-18  # absolute path to dir containing train.bin/val.bin (null = data/{dataset})
+gradient_accumulation_steps: 40  # 5 * 8 GPUs
+batch_size: 12
+block_size: 1024
+
+# model
+n_layer: 12
+n_head: 12
+n_embd: 768
+dropout: 0.0
+bias: false
+
+# optimizer
+learning_rate: 6e-4
+max_iters: 600000
+weight_decay: 0.1
+beta1: 0.9
+beta2: 0.95
+grad_clip: 1.0
+
+# lr schedule
+decay_lr: true
+warmup_iters: 2000
+lr_decay_iters: 600000
+min_lr: 6e-5
+
+# system
+backend: nccl
+device: cuda
+dtype: auto  # 'auto', 'float32', 'bfloat16', or 'float16'
+compile: true

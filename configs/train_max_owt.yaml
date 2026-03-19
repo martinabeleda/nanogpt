@@ -1,0 +1,53 @@
+# Max model on RTX 4070 12GB: 429M params (30L/16H/1024E)
+# Training on OpenWebText
+# 2 epochs ≈ 551k iters at current batch settings (~14 days)
+#
+# Usage:
+#   uv run python train.py --config-name train_max_owt
+
+defaults:
+  - config
+  - _self_
+
+out_dir: out-max-owt
+eval_interval: 500
+eval_iters: 200
+log_interval: 10
+always_save_checkpoint: true
+
+wandb_log: true
+wandb_project: nanogpt-owt-max
+wandb_run_name: gpt2-429M
+
+dataset: openwebtext
+data_dir: /data/openwebtext/2026-03-18
+
+# Model: 429M params — max that fits on 4070 12GB
+n_layer: 30
+n_head: 16
+n_embd: 1024
+dropout: 0.0
+bias: false
+
+# Memory-constrained batch settings
+batch_size: 2
+block_size: 1024
+gradient_accumulation_steps: 16  # effective batch = 32 * 1024 = 32,768 tokens/iter
+
+# Optimizer
+learning_rate: 3e-4
+weight_decay: 0.1
+beta1: 0.9
+beta2: 0.95
+grad_clip: 1.0
+
+# LR schedule for 2 epochs (~551k iters)
+max_iters: 551488
+warmup_iters: 2000
+lr_decay_iters: 551488
+min_lr: 3e-5
+
+# System
+device: cuda
+dtype: bfloat16
+compile: true

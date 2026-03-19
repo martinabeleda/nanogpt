@@ -1,0 +1,28 @@
+# Fine-tune a pretrained GPT-2 model on Shakespeare.
+#
+# Usage:
+#   uv run python train.py --config-name finetune_shakespeare
+
+defaults:
+  - config
+  - _self_
+
+out_dir: out-shakespeare
+eval_interval: 5
+eval_iters: 40
+always_save_checkpoint: false
+
+wandb_log: false
+wandb_project: shakespeare
+wandb_run_name: ft-gpt2-xl
+
+dataset: shakespeare
+data_dir: /data/openwebtext/2026-03-18
+init_from: gpt2-xl
+
+batch_size: 1
+gradient_accumulation_steps: 32
+max_iters: 20
+
+learning_rate: 3e-5
+decay_lr: false
