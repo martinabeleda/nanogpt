@@ -5,20 +5,34 @@ by chopping off the language model head and adding a binary classifier on top.
 
 ## Development
 
+### Prerequisites
+
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/):
+
 ```shell
-poetry install
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
+
+### Setup
+
+Create the virtual environment and install all dependencies:
+
+```shell
+uv sync
+```
+
+This will create a `.venv` directory with all project and dev dependencies installed.
 
 ## Training
 
 Test run:
 
 ```shell
-python train.py --config-name rotten_tomatoes_binary_classification_fast
+uv run python train.py --config-name rotten_tomatoes_binary_classification_fast
 ```
 
 Full training run:
 
 ```shell
-python train.py --config-name rotten_tomatoes_binary_classification
+uv run python train.py --config-name rotten_tomatoes_binary_classification
 ```
