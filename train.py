@@ -202,6 +202,10 @@ class Trainer:
             self.iter_num = checkpoint["iter_num"]
             self.best_val_loss = checkpoint["best_val_loss"]
             self._resume_checkpoint = checkpoint
+            # Auto-recover wandb run ID from checkpoint if not explicitly set
+            if not cfg.wandb_run_id and checkpoint.get("wandb_run_id"):
+                self._resumed_wandb_run_id = checkpoint["wandb_run_id"]
+                logger.info(f"Found wandb run ID in checkpoint: {self._resumed_wandb_run_id}")
 
         elif cfg.init_from.startswith("gpt2"):
             logger.info(f"Initializing from OpenAI GPT-2 weights: {cfg.init_from}")
@@ -291,6 +295,7 @@ class Trainer:
             "iter_num": self.iter_num,
             "best_val_loss": val_loss,
             "config": OmegaConf.to_container(self.config, resolve=True),
+            "wandb_run_id": wandb.run.id if self.config.wandb_log and wandb.run else None,
         }
         ckpt_path = os.path.join(self.config.out_dir, "ckpt.pt")
         logger.info(f"Saving checkpoint to {self.config.out_dir}")
@@ -313,11 +318,16 @@ class Trainer:
         logger.info(f"Resolved config:\n{OmegaConf.to_yaml(cfg)}")
 
         if cfg.wandb_log and self.master_process:
-            wandb.init(
+            wandb_run_id = cfg.wandb_run_id or getattr(self, "_resumed_wandb_run_id", None)
+            wandb_kwargs = dict(
                 project=cfg.wandb_project,
                 name=cfg.wandb_run_name,
                 config=resolved_config,
             )
+            if wandb_run_id:
+                wandb_kwargs["id"] = wandb_run_id
+                wandb_kwargs["resume"] = "must"
+            wandb.init(**wandb_kwargs)
 
         raw_model = self.model.module if self.ddp else self.model
         running_mfu = -1.0

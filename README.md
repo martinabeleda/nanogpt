@@ -86,6 +86,12 @@ Resume from checkpoint (loads `out-max-owt/ckpt.pt`):
 uv run python train.py --config-name train_max_owt init_from=resume
 ```
 
+The W&B run ID is saved in the checkpoint, so resuming automatically continues the same W&B run. To override with a different run ID:
+
+```shell
+uv run python train.py --config-name train_max_owt init_from=resume wandb_run_id=<RUN_ID>
+```
+
 Sample from the trained model:
 
 ```shell

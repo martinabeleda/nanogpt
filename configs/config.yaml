@@ -17,6 +17,7 @@ init_from: scratch  # 'scratch', 'resume', or 'gpt2*'
 wandb_log: false
 wandb_project: nanogpt
 wandb_run_name: gpt2
+wandb_run_id: null  # set to resume a specific wandb run (e.g. "abc123xy")
 
 # data
 dataset: openwebtext
